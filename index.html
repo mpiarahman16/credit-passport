@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Credit Passport: a credit-building copilot for people new to the US. Product concept and prototype by Pia Rahman.">
+<title>Credit Passport</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: intake form on the left, the person's "passport" and 12-month plan on the right; stacks on phones. */
+:root{
+  --paper:#eef2f1; --surface:#ffffff; --ink:#14222e; --muted:#566773; --line:#d3dcdf;
+  --cover:#123a54; --cover-2:#0d2c41; --foil:#e7d9a8; --stamp:#b23a48; --ok:#2c7a57; --warn:#a86a12;
+  --chip:#e4ecee;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0c151c; --surface:#14212b; --ink:#e4ebee; --muted:#93a4b0; --line:#253541;
+  --cover:#1a4a68; --cover-2:#123a54; --foil:#eadba6; --stamp:#e27482; --ok:#5fc494; --warn:#e3a94b; --chip:#1c2c38; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0c151c; --surface:#14212b; --ink:#e4ebee; --muted:#93a4b0; --line:#253541;
+  --cover:#1a4a68; --cover-2:#123a54; --foil:#eadba6; --stamp:#e27482; --ok:#5fc494; --warn:#e3a94b; --chip:#1c2c38; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:24px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{flex:none}
+.brand h1{font-size:1.5rem;font-weight:800;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--muted);font-size:.9rem}
+.badge{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--line);padding:4px 10px;border-radius:999px}
+
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Intake */
+.intake{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:16px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:860px){.intake{position:static}}
+.intake h2{font-size:1.1rem}
+.lede{margin:0;color:var(--muted);font-size:.88rem}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.presets button{font:500 .82rem var(--f-body);background:var(--chip);color:var(--ink);border:1px solid transparent;border-radius:999px;padding:6px 12px;cursor:pointer}
+.presets button[aria-pressed="true"]{border-color:var(--cover);background:transparent}
+.field{display:grid;gap:6px}
+.field label,.field .lbl{font-size:.74rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=number],select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--cover);outline-offset:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{flex:1;text-align:center;font-size:.85rem;padding:7px 4px;cursor:pointer;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg input:checked + span{color:var(--ink);font-weight:600}
+.seg label:has(input:checked){background:var(--chip)}
+.seg label:has(input:focus-visible){outline:2px solid var(--cover);outline-offset:-2px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--cover)}
+
+/* Passport */
+.out{display:grid;gap:24px;min-width:0}
+.passport{background:linear-gradient(160deg,var(--cover),var(--cover-2));color:var(--foil);border-radius:16px;padding:24px 24px 0;overflow:hidden;display:grid;gap:18px;position:relative}
+.passport .eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;opacity:.8}
+.passport h2{font-size:clamp(1.6rem,3.4vw,2.3rem);font-weight:700;color:#fff8e6}
+.passport .sum{margin:0;color:#f3ead0;opacity:.92;max-width:58ch}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:620px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fact .k{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.fact .v{font-family:var(--f-display);font-size:1.25rem;font-weight:700;color:#fff8e6;font-variant-numeric:tabular-nums}
+.mrz{font-family:var(--f-mono);font-size:.82rem;letter-spacing:.14em;background:rgba(0,0,0,.22);margin:0 -24px;padding:12px 24px;white-space:nowrap;overflow:hidden;text-overflow:clip;color:#efe3b8}
+.seal{position:absolute;right:20px;top:20px;opacity:.9}
+@media (max-width:520px){.seal{display:none}}
+
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:16px;min-width:0}
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.sec-head h3{font-size:1.2rem}
+.sec-head p{margin:0;color:var(--muted);font-size:.86rem}
+
+/* Recommendations */
+.recs{display:grid;gap:12px}
+.rec{border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px}
+.rec-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.rec h4{margin:0;font-family:var(--f-display);font-size:1.05rem;font-weight:700}
+.tag{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid currentColor}
+.tag.first{color:var(--stamp)} .tag.core{color:var(--ok)} .tag.boost{color:var(--warn)}
+.why{margin:0;max-width:68ch}
+.why b{font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--muted)}
+.meta span strong{color:var(--ink);font-weight:600}
+details{font-size:.9rem}
+details summary{cursor:pointer;color:var(--cover);font-weight:600;width:max-content;max-width:100%}
+:root[data-theme="dark"] details summary{color:var(--foil)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) details summary{color:var(--foil)}}
+details ul{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
+
+/* Timeline of stamps */
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.tl li{display:grid;grid-template-columns:76px minmax(0,1fr);gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+.tl li:first-child{border-top:0}
+.stamp{width:68px;height:68px;border-radius:50%;border:2px dashed var(--stamp);color:var(--stamp);display:grid;place-content:center;text-align:center;font-family:var(--f-mono);line-height:1.05;transform:rotate(-8deg)}
+.tl li:nth-child(even) .stamp{transform:rotate(6deg)}
+.stamp small{font-size:.6rem;letter-spacing:.12em}
+.stamp b{font-size:1.3rem;font-weight:500}
+.stamp.milestone{border-style:double;border-width:4px;color:var(--ok);border-color:var(--ok)}
+.tl h5{margin:0 0 2px;font-family:var(--f-display);font-size:1rem;font-weight:700}
+.tl p{margin:0;color:var(--muted);font-size:.9rem;max-width:62ch}
+
+/* Explainability */
+.explain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:620px){.explain{grid-template-columns:minmax(0,1fr)}}
+.explain h4{margin:0 0 6px;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:var(--f-body)}
+.explain ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:.9rem}
+.fine{margin:0;font-size:.82rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+footer{color:var(--muted);font-size:.82rem;text-align:center}
+@media (prefers-reduced-motion:no-preference){.rec,.tl li{animation:in .35s ease both}@keyframes in{from{transform:translateY(4px)}to{transform:none}}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="3" width="28" height="34" rx="4" fill="var(--cover)"/><circle cx="20" cy="17" r="7" fill="none" stroke="var(--foil)" stroke-width="1.6"/><path d="M13 17h14M20 10c-3 4-3 10 0 14M20 10c3 4 3 10 0 14" stroke="var(--foil)" stroke-width="1.2" fill="none"/><rect x="12" y="29" width="16" height="2" rx="1" fill="var(--foil)"/></svg>
+      <div><h1>Credit Passport</h1><p>A credit-building copilot for people new to the US</p></div>
+    </div>
+    <span class="badge">Prototype · sample data</span>
+  </header>
+
+  <div class="grid">
+    <form class="intake" id="intake" autocomplete="off">
+      <div><h2>Tell us where you're starting</h2><p class="lede">Six questions. No credit check, no account numbers.</p></div>
+      <div class="presets" role="group" aria-label="Example profiles">
+        <button type="button" data-p="sofia" aria-pressed="true">Example: Sofia</button>
+        <button type="button" data-p="diego" aria-pressed="false">Example: Diego</button>
+        <button type="button" data-p="li" aria-pressed="false">Example: Li</button>
+      </div>
+      <div class="field"><label for="name">First name</label><input type="text" id="name" maxlength="20"></div>
+      <div class="row2">
+        <div class="field"><label for="months">Months in the US</label><input type="number" id="months" min="0" max="60"></div>
+        <div class="field"><label for="income">Monthly income ($)</label><input type="number" id="income" min="0" step="100"></div>
+      </div>
+      <div class="field"><span class="lbl" id="idl">Taxpayer ID</span>
+        <div class="seg" role="radiogroup" aria-labelledby="idl">
+          <label><input type="radio" name="tid" id="tid-ssn" value="ssn"><span>SSN</span></label>
+          <label><input type="radio" name="tid" id="tid-itin" value="itin"><span>ITIN</span></label>
+          <label><input type="radio" name="tid" id="tid-none" value="none"><span>Not yet</span></label>
+        </div></div>
+      <div class="row2">
+        <div class="field"><label for="rent">Monthly rent ($)</label><input type="number" id="rent" min="0" step="50"></div>
+        <div class="field"><label for="deposit">Can set aside ($)</label><input type="number" id="deposit" min="0" step="50"></div>
+      </div>
+      <div class="field"><label for="goal">Main goal</label>
+        <select id="goal"><option value="apartment">Rent a better apartment</option><option value="car">Finance a car</option><option value="card">Get a rewards card</option><option value="home">Start toward a mortgage</option></select></div>
+      <div class="field"><span class="lbl" id="hl">Plan length</span>
+        <div class="seg" role="radiogroup" aria-labelledby="hl">
+          <label><input type="radio" name="hz" id="hz-6" value="6"><span>6 months</span></label>
+          <label><input type="radio" name="hz" id="hz-12" value="12"><span>12 months</span></label>
+        </div></div>
+      <label class="check"><input type="checkbox" id="bank"> I have a US checking account</label>
+      <label class="check"><input type="checkbox" id="bills"> My phone or utility bill is in my name</label>
+      <label class="check"><input type="checkbox" id="home"> I had credit cards or loans in my home country</label>
+    </form>
+
+    <div class="out" aria-live="polite">
+      <div class="passport">
+        <svg class="seal" width="74" height="74" viewBox="0 0 74 74" aria-hidden="true"><circle cx="37" cy="37" r="34" fill="none" stroke="var(--foil)" stroke-width="1.2" opacity=".6"/><circle cx="37" cy="37" r="27" fill="none" stroke="var(--foil)" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/><text x="37" y="34" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1.5" fill="var(--foil)">CREDIT</text><text x="37" y="45" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1.5" fill="var(--foil)">PASSPORT</text></svg>
+        <div class="eyebrow" id="stage">Stage 1 of 4 · Arrival</div>
+        <h2 id="headline">Sofia's 12-month credit plan</h2>
+        <p class="sum" id="summary"></p>
+        <div class="facts">
+          <div class="fact"><div class="k">First score</div><div class="v" id="f-score">Month 7</div></div>
+          <div class="fact"><div class="k">Deposit held</div><div class="v" id="f-dep">$300</div></div>
+          <div class="fact"><div class="k">Into savings / mo</div><div class="v" id="f-save">$25</div></div>
+          <div class="fact"><div class="k">Accounts reporting</div><div class="v" id="f-acc">3</div></div>
+        </div>
+        <div class="mrz" id="mrz" aria-label="Plan code">P&lt;USA</div>
+      </div>
+
+      <section class="card">
+        <div class="sec-head"><h3>Your recommended steps</h3><p>Each one explains why it fits you</p></div>
+        <div class="recs" id="recs"></div>
+      </section>
+
+      <section class="card">
+        <div class="sec-head"><h3>Month by month</h3><p>Stamps mark the milestones you'll collect</p></div>
+        <ol class="tl" id="tl"></ol>
+      </section>
+
+      <section class="card">
+        <div class="sec-head"><h3>How this plan was made</h3><p>Transparent by design</p></div>
+        <div class="explain">
+          <div><h4>What we used</h4><ul id="used"></ul></div>
+          <div><h4>What we never use</h4><ul><li>Age, gender, race or religion</li><li>Country of birth or nationality</li><li>Your name, beyond greeting you</li><li>Any data you didn't type here</li></ul></div>
+        </div>
+        <p class="fine">Credit Passport gives education and planning, not a credit decision or financial advice. Product names are generic on purpose; costs and approval rules vary by lender. A FICO score usually needs at least one account that is six months old and has been reported in the last six months.</p>
+      </section>
+    </div>
+  </div>
+  <footer>Product concept and prototype by Pia Rahman · All profiles are fictional</footer>
+</div>
+
+<script>
+const P = {
+  sofia:{name:"Sofia",months:1,income:4200,tid:"ssn",rent:1650,deposit:300,goal:"apartment",hz:"12",bank:true,bills:false,home:false},
+  diego:{name:"Diego",months:4,income:2600,tid:"itin",rent:1100,deposit:200,goal:"car",hz:"12",bank:true,bills:true,home:true},
+  li:{name:"Li",months:0,income:3500,tid:"none",rent:0,deposit:150,goal:"card",hz:"6",bank:false,bills:false,home:true}
+};
+const $ = id => document.getElementById(id);
+const money = n => "$" + Math.round(n).toLocaleString("en-US");
+const goals = {
+  apartment:{label:"rent a better apartment", end:"Apply for the apartment with a real score and months of on-time history. Bring your plan summary to the landlord."},
+  car:{label:"finance a car", end:"Compare auto loan offers now that you have a score. Pre-approval from a credit union is a good first quote."},
+  card:{label:"get a rewards card", end:"Ask your issuer to move your secured card to an unsecured one and return your deposit, then compare rewards cards."},
+  home:{label:"start toward a mortgage", end:"Keep every account open and on time. Lenders like two years of history, so this is your foundation year."}
+};
+
+function fill(p){
+  $("name").value=p.name; $("months").value=p.months; $("income").value=p.income;
+  $("rent").value=p.rent; $("deposit").value=p.deposit; $("goal").value=p.goal;
+  $("tid-"+p.tid).checked=true; $("hz-"+p.hz).checked=true;
+  $("bank").checked=p.bank; $("bills").checked=p.bills; $("home").checked=p.home;
+}
+function read(){
+  return {
+    name:($("name").value.trim()||"Your").replace(/[<>&"]/g,""),
+    months:+$("months").value||0, income:+$("income").value||0, rent:+$("rent").value||0,
+    deposit:+$("deposit").value||0, goal:$("goal").value,
+    tid:(document.querySelector('input[name=tid]:checked')||{}).value||"none",
+    hz:+((document.querySelector('input[name=hz]:checked')||{}).value||12),
+    bank:$("bank").checked, bills:$("bills").checked, home:$("home").checked
+  };
+}
+
+function plan(s){
+  const recs=[], steps=[], used=[];
+  const hasId = s.tid!=="none";
+  const lag = (hasId?0:1) + (s.bank?0:0); // months before a card can start
+  const dep = Math.max(200, Math.min(s.deposit||0, 1000));
+  const saveUp = s.deposit<200 ? 200 - s.deposit : 0;
+  const cbl = s.income>=1500 && hasId && s.hz>=12;
+  const cblPay = s.income>=4000 ? 50 : 25;
+
+  used.push(`${s.months} month${s.months===1?"":"s"} in the US`);
+  used.push(hasId ? `Has an ${s.tid.toUpperCase()}` : "No taxpayer ID yet");
+  used.push(`${money(s.income)} monthly income`);
+  if(s.rent) used.push(`${money(s.rent)} monthly rent`);
+  used.push(`${money(s.deposit)} available to set aside`);
+  used.push(`Goal: ${goals[s.goal].label}`);
+
+  if(!hasId) recs.push({t:"Get a taxpayer ID number",tag:["first","Do first"],
+    why:`Credit bureaus build your file around an SSN or ITIN. <b>Without one, nothing below can be reported in your name</b>, so this comes before anything else.`,
+    meta:[["Cost","Free"],["Time","Usually a few weeks"]],
+    how:["An SSN comes from the Social Security Administration if you're eligible to work.","An ITIN comes from the IRS and is accepted by some card issuers and credit unions.","Ask your employer or a tax clinic which applies to you."]});
+
+  if(!s.bank) recs.push({t:"Open a US checking account",tag:["first","Do first"],
+    why:`Every on-time payment in this plan runs on autopay. <b>A checking account is the engine</b>, and most secured cards ask you to fund the deposit from one.`,
+    meta:[["Cost","Look for $0 monthly fee"],["Time","Same day"]],
+    how:["Bring your passport and proof of address.","Ask for a no-fee account with a debit card.","Set up direct deposit so your pay lands here."]});
+
+  if(s.home) recs.push({t:"Bring your home-country history",tag:["boost","Shortcut"],
+    why:`You've used credit before. <b>Some US lenders can read a translated credit report from select countries</b>, which can get you a regular card sooner instead of starting from zero.`,
+    meta:[["Cost","Often free to you"],["Time","Check before applying"]],
+    how:["Ask lenders whether they accept international credit history.","If they don't, the secured card below still works."]});
+
+  recs.push({t:"Start a secured credit card",tag:["core","Core step"],
+    why:`This is the fastest way to open a US credit file. <b>Your ${money(dep)} deposit becomes your limit</b>, so the bank takes little risk and approval with no history is likely. Keep each statement under <b>${money(dep*0.1)}</b>, which is 10% of the limit.` + (saveUp?` You'll need about <b>${money(saveUp)} more</b> saved first; most deposits start around $200.`:"") + (s.tid==="itin"?" Confirm the issuer accepts an ITIN before you apply.":""),
+    meta:[["Deposit",money(dep)+" refundable"],["Annual fee","Choose $0"],["Starts",`Month ${1+lag}`]],
+    how:[s.bills?"Move your phone bill onto the card. One small, regular charge is enough.":"Put one small recurring bill on it, like a streaming plan.","Turn on autopay for the full statement balance.","Never close it. Its age helps your score later."]});
+
+  if(s.rent) recs.push({t:"Report the rent you already pay",tag:["core","Core step"],
+    why:`You pay <b>${money(s.rent)} every month</b> already. Rent reporting turns that habit into credit history at no extra risk to you.`,
+    meta:[["Cost","Free to about $10 / mo"],["Starts",`Month ${1+lag}`]],
+    how:["Ask your landlord or property manager if they report rent.","If not, a rent-reporting service can, sometimes with past months included.","Not every score model counts rent, so treat it as a boost, not the base."]});
+
+  if(cbl) recs.push({t:"Add a credit-builder loan",tag:["core","Core step"],
+    why:`This adds a second type of credit, an installment loan, which score models reward. <b>You pay ${money(cblPay)} a month into a locked savings account</b> and get it back when the loan ends.`,
+    meta:[["Payment",money(cblPay)+" / mo"],["Cost","A small amount of interest"],["Starts",`Month ${2+lag}`]],
+    how:["Credit unions and community banks offer these.","Pick a payment you could make even in a tight month.","At the end you have a payment history and savings."]});
+
+  if(s.bills) recs.push({t:"Count your phone and utility bills",tag:["boost","Boost"],
+    why:`Your bills are in your name. <b>Free tools from the credit bureaus can add those payments</b> to your file with your permission.`,
+    meta:[["Cost","Free"],["Time","About 10 minutes"]],
+    how:["Link the bank account you pay bills from.","It affects one bureau's file at a time."]});
+
+  // Timeline
+  const H = s.hz;
+  const first = 1+lag, scoreM = Math.min(first+6, 13);
+  if(!hasId || !s.bank) steps.push({m:0,h:"Set up the basics",p:[!hasId?"Apply for your SSN or ITIN.":null,!s.bank?"Open a no-fee checking account.":null].filter(Boolean).join(" "),ms:false});
+  steps.push({m:first,h:"Open your first credit line",p:`Apply for the secured card${s.rent?" and start rent reporting":""}. Set autopay the same day.`,ms:true,lbl:"FILE"});
+  if(cbl) steps.push({m:first+1,h:"Add the credit-builder loan",p:`${money(cblPay)} a month into savings, on autopay.`,ms:false});
+  steps.push({m:first+2,h:"Check your credit report",p:"Pull free reports from all three bureaus at AnnualCreditReport.com and fix anything wrong.",ms:false});
+  if(scoreM<=H+1) steps.push({m:scoreM,h:"Your first credit score",p:"Six months of reported history is usually enough for a FICO score. Check it in your card's app.",ms:true,lbl:"SCORE"});
+  else steps.push({m:H,h:"Almost scorable",p:`Your file is ${H-first} months old. Keep going; a first score usually follows at month ${scoreM}.`,ms:false});
+  if(H>=12 && first+8<=12) steps.push({m:first+8,h:"Ask for an upgrade",p:"Ask the issuer to review your secured card for a higher limit or an unsecured card.",ms:false});
+  steps.push({m:H,h:`Goal check: ${goals[s.goal].label}`,p:goals[s.goal].end,ms:true,lbl:"GOAL"});
+  steps.sort((a,b)=>a.m-b.m);
+
+  const accounts = 1 + (s.rent?1:0) + (cbl?1:0) + (s.bills?1:0);
+  const stage = s.months<3?"Stage 1 of 4 · Arrival": s.months<12?"Stage 2 of 4 · Settling in":"Stage 3 of 4 · Building";
+  return {recs,steps,used,dep,cbl,cblPay,accounts,stage,scoreM,first};
+}
+
+function render(){
+  const s=read(), r=plan(s);
+  $("stage").textContent=r.stage;
+  $("headline").textContent=`${s.name}'s ${s.hz}-month credit plan`;
+  $("summary").textContent=`Built for someone ${s.months} month${s.months===1?"":"s"} into life in the US who wants to ${goals[s.goal].label}. ${r.recs.length} steps, ${r.accounts} accounts reporting, and nothing you can't explain to a friend.`;
+  $("f-score").textContent = r.scoreM<=s.hz+1 ? `Month ${r.scoreM}` : `After month ${s.hz}`;
+  $("f-dep").textContent=money(r.dep);
+  $("f-save").textContent= r.cbl? money(r.cblPay) : "$0";
+  $("f-acc").textContent=r.accounts;
+  const mrzName=s.name.toUpperCase().replace(/[^A-Z]/g,"").slice(0,14)||"HOLDER";
+  $("mrz").textContent=(`P<USA<CREDIT<PASSPORT<<${mrzName}<<${s.hz}M<${s.goal.toUpperCase()}`+"<".repeat(60)).slice(0,64);
+
+  $("recs").innerHTML=r.recs.map((x,i)=>`<article class="rec" style="animation-delay:${i*40}ms">
+    <div class="rec-top"><h4>${x.t}</h4><span class="tag ${x.tag[0]}">${x.tag[1]}</span></div>
+    <p class="why">${x.why}</p>
+    <div class="meta">${x.meta.map(m=>`<span>${m[0]}: <strong>${m[1]}</strong></span>`).join("")}</div>
+    <details><summary>How to do it</summary><ul>${x.how.map(h=>`<li>${h}</li>`).join("")}</ul></details>
+  </article>`).join("");
+
+  $("tl").innerHTML=r.steps.map(x=>`<li>
+    <div class="stamp${x.ms?" milestone":""}" aria-hidden="true">${x.ms?`<small>${x.lbl}</small>`:"<small>MONTH</small>"}<b>${x.m}</b></div>
+    <div><h5>Month ${x.m} · ${x.h}</h5><p>${x.p}</p></div></li>`).join("");
+  $("used").innerHTML=r.used.map(u=>`<li>${u}</li>`).join("");
+}
+
+document.querySelectorAll(".presets button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".presets button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  fill(P[b.dataset.p]); render();
+}));
+$("intake").addEventListener("input",()=>{document.querySelectorAll(".presets button").forEach(x=>x.setAttribute("aria-pressed","false"));render();});
+$("intake").addEventListener("submit",e=>e.preventDefault());
+fill(P.sofia); render();
+</script>
+
+</body>
+</html>
